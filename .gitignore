@@ -1,0 +1,26 @@
+# Environment & Secrets
+.env
+*.pem
+*.key
+id_rsa*
+id_ed25519*
+
+# Backups & Logs
+backups/
+logs/
+*.dump
+*.sql.gz
+*.log
+*.sha256
+
+# Python (optional pgvector module)
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# OS & Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
