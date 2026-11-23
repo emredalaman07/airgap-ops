@@ -38,7 +38,7 @@ setup_ssh() {
 }
 
 setup_firewall() {
-    # Keep PostgreSQL (5432) local-only; expose only SSH on the public zone
+    # Keep PostgreSQL (9999) local-only; expose only SSH on the public zone
     if (( APPLY )); then
         systemctl enable --now firewalld
         firewall-cmd --set-default-zone=public

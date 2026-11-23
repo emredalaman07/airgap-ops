@@ -22,10 +22,16 @@ sudo ./scripts/harden_server.sh --apply
 ```
 
 ## Firewalld
-Only `ssh` is allowed on the `public` zone. PostgreSQL (`5432/tcp`) stays bound to localhost.
+Only `ssh` is allowed on the `public` zone. PostgreSQL (`9999/tcp`) stays bound to localhost.
 
 ## SELinux
-The host runs in `Enforcing` mode (`getenforce`). If a service or backup path gets blocked:
+The host runs in `Enforcing` mode (`getenforce`). Since PostgreSQL runs on custom port `9999`, allow it in SELinux policy:
+
+```bash
+sudo semanage port -a -t postgresql_port_t -p tcp 9999
+```
+
+If a service or backup path gets blocked:
 
 ```bash
 sudo ausearch -m avc -ts recent
