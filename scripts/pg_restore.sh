@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Verify and restore a PostgreSQL custom-format dump into a target database
-# Usage: sudo -u postgres ./scripts/pg_restore.sh <dump_file> [target_db]
+# Verify sha256 (if present) and restore a custom-format dump into a target DB.
+# Defaults to bastion_ops_restore_test so the main DB is not overwritten by mistake.
 
 set -euo pipefail
 
@@ -9,54 +9,56 @@ if [[ $# -lt 1 ]]; then
     exit 1
 fi
 
-DUMP_FILE="$1"
-# Default to a separate test database so production is not overwritten by accident
+# Resolve dump path before switching working directory
+DUMP_FILE="$(realpath "$1")"
 TARGET_DB="${2:-bastion_ops_restore_test}"
 
-PG_HOST="${PG_HOST:-localhost}"
+cd /
+
+PG_HOST="${PG_HOST:-}"
 PG_PORT="${PG_PORT:-9999}"
 PG_USER="${PG_USER:-postgres}"
 LOG_FILE="${LOG_FILE:-/var/log/bastion-pg/restore.log}"
 
 mkdir -p "$(dirname "${LOG_FILE}")"
 
+PG_CONN_ARGS=(-p "${PG_PORT}" -U "${PG_USER}")
+if [[ -n "${PG_HOST}" ]]; then
+    PG_CONN_ARGS+=(-h "${PG_HOST}")
+fi
+
 log() {
-    local msg="[$(date '+%Y-%m-%d %H:%M:%S')] $*"
-    echo "${msg}" | tee -a "${LOG_FILE}"
+    printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*" | tee -a "${LOG_FILE}"
 }
 
 if [[ ! -f "${DUMP_FILE}" ]]; then
-    log "ERROR: dump file not found: ${DUMP_FILE}"
+    log "error: dump file not found: ${DUMP_FILE}"
     exit 1
 fi
 
-# Verify checksum if a matching .sha256 file exists
 if [[ -f "${DUMP_FILE}.sha256" ]]; then
-    log "VERIFY: checking sha256 for ${DUMP_FILE}"
-    if ! sha256sum -c "${DUMP_FILE}.sha256" >/dev/null; then
-        log "ERROR: checksum mismatch for ${DUMP_FILE}"
+    if ! (cd "$(dirname "${DUMP_FILE}")" && sha256sum -c "$(basename "${DUMP_FILE}").sha256" >/dev/null); then
+        log "error: sha256 mismatch for ${DUMP_FILE}"
         exit 1
     fi
-    log "VERIFY: checksum OK"
+    log "checksum verified: $(basename "${DUMP_FILE}")"
 else
-    log "WARN: no .sha256 file found, skipping checksum check"
+    log "warn: ${DUMP_FILE}.sha256 not found, skipping checksum check"
 fi
 
-log "START: restoring ${DUMP_FILE} into '${TARGET_DB}' (${PG_HOST}:${PG_PORT})"
+log "restoring $(basename "${DUMP_FILE}") into ${TARGET_DB} (port ${PG_PORT})"
 
-# Recreate target database cleanly before restoring
-psql -h "${PG_HOST}" -p "${PG_PORT}" -U "${PG_USER}" -d postgres -v ON_ERROR_STOP=1 \
+psql "${PG_CONN_ARGS[@]}" -d postgres -v ON_ERROR_STOP=1 \
     -c "DROP DATABASE IF EXISTS \"${TARGET_DB}\";" \
-    -c "CREATE DATABASE \"${TARGET_DB}\";"
+    -c "CREATE DATABASE \"${TARGET_DB}\";" >/dev/null
 
-pg_restore -h "${PG_HOST}" -p "${PG_PORT}" -U "${PG_USER}" -d "${TARGET_DB}" \
+pg_restore "${PG_CONN_ARGS[@]}" -d "${TARGET_DB}" \
     --no-owner --exit-on-error "${DUMP_FILE}"
 
-# Basic row-count check to confirm data came back intact
-COUNTS="$(psql -h "${PG_HOST}" -p "${PG_PORT}" -U "${PG_USER}" -d "${TARGET_DB}" -tAc "
+COUNTS="$(psql "${PG_CONN_ARGS[@]}" -d "${TARGET_DB}" -tAc "
     SELECT 'assets=' || (SELECT count(*) FROM ops.assets)
         || ', maintenance_logs=' || (SELECT count(*) FROM ops.maintenance_logs)
         || ', audit_events=' || (SELECT count(*) FROM ops.audit_events);
 ")"
 
-log "OK: restore completed into '${TARGET_DB}' (${COUNTS})"
+log "restore ok: ${TARGET_DB} (${COUNTS})"
