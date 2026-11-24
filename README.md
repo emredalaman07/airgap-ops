@@ -80,7 +80,7 @@ sudo chown -R postgres:postgres /var/backups/bastion-pg /var/log/bastion-pg
 sudo chmod 750 /var/backups/bastion-pg /var/log/bastion-pg
 
 sudo -u postgres /usr/local/bin/pg_backup.sh
-LATEST="$(sudo ls -t /var/backups/bastion-pg/bastion_ops_*.dump | head -n 1)"
+LATEST="$(sudo find /var/backups/bastion-pg -maxdepth 1 -name 'bastion_ops_*.dump' | sort | tail -n 1)"
 sudo -u postgres /usr/local/bin/pg_restore.sh "${LATEST}"
 ```
 

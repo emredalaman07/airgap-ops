@@ -6,7 +6,7 @@
 If no target database name is given, `pg_restore.sh` restores into `bastion_ops_restore_test` so `bastion_ops` is left untouched:
 
 ```bash
-LATEST="$(sudo ls -t /var/backups/bastion-pg/bastion_ops_*.dump | head -n 1)"
+LATEST="$(sudo find /var/backups/bastion-pg -maxdepth 1 -name 'bastion_ops_*.dump' | sort | tail -n 1)"
 sudo -u postgres /usr/local/bin/pg_restore.sh "${LATEST}"
 ```
 
