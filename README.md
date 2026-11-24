@@ -79,7 +79,7 @@ bastion-pg-ops/
 
 5. **Run the health check**:
    ```bash
-   ./scripts/health_check.sh
+   sudo ./scripts/health_check.sh
    ```
    Exit codes: `0` (OK), `1` (WARN), `2` (CRIT).
 
