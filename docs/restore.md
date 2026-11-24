@@ -1,30 +1,30 @@
-# Backup Restore and Verification
+# Restore Verification
 
-`pg_restore.sh` validates the backup checksum, restores a `.dump` file into a clean target database, and checks row counts across the `ops` tables.
+`pg_restore.sh` checks the `.sha256` file first, drops/recreates the target database, runs `pg_restore`, and prints row counts from `ops.assets`, `ops.maintenance_logs`, and `ops.audit_events`.
 
-## Restore Drill (Safe Test Database)
-By default, the script restores into `bastion_ops_restore_test` so `bastion_ops` stays untouched:
+## Test Restore (Separate Database)
+If no target database name is given, `pg_restore.sh` restores into `bastion_ops_restore_test` so `bastion_ops` is left untouched:
 
 ```bash
-LATEST="$(ls -t /var/backups/bastion-pg/bastion_ops_*.dump | head -n 1)"
-sudo -u postgres ./scripts/pg_restore.sh "${LATEST}"
+LATEST="$(sudo ls -t /var/backups/bastion-pg/bastion_ops_*.dump | head -n 1)"
+sudo -u postgres /usr/local/bin/pg_restore.sh "${LATEST}"
 ```
 
-Inspect restored data:
+Check the restored rows:
 ```bash
 sudo -u postgres psql -p 9999 -d bastion_ops_restore_test \
     -c "SELECT hostname, ip_address, status FROM ops.assets;"
 ```
 
-Clean up the test database after verification:
+Drop the test database when done:
 ```bash
 sudo -u postgres psql -p 9999 -d postgres \
     -c "DROP DATABASE IF EXISTS bastion_ops_restore_test;"
 ```
 
-## Restoring Into Production
-To overwrite the main database, pass `bastion_ops` explicitly as the second argument (ensure active connections are stopped first):
+## Full Restore Into Main Database
+Stop client traffic first, then pass `bastion_ops` explicitly:
 
 ```bash
-sudo -u postgres ./scripts/pg_restore.sh "${LATEST}" bastion_ops
+sudo -u postgres /usr/local/bin/pg_restore.sh "${LATEST}" bastion_ops
 ```

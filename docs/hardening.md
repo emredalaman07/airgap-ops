@@ -1,20 +1,20 @@
-# Server Hardening Notes
+# Server Hardening
 
-Baseline setup for the RHEL/Rocky/AlmaLinux 9 VM.
+Baseline setup used on the Rocky Linux 9 VM (`bastion-db-01`).
 
-## Network
-- Adapter 1 (NAT): used during package installation, disabled later for air-gapped testing.
-- Adapter 2 (Host-Only): local SSH access from the host while external network is down.
+## VM Network
+- Adapter 1 (NAT): used during initial `dnf` package installation, disabled afterwards to test air-gapped operation.
+- Adapter 2 (Host-Only, `192.168.56.0/24`): local SSH access from the host when external internet is cut.
 
 ## SSH
-Generate a key pair on the host and copy it to the VM before applying sshd changes:
+Generate an ed25519 key on the host and copy it to `~/.ssh/authorized_keys` on the VM before disabling password logins:
 
 ```bash
 ssh-keygen -t ed25519
-ssh-copy-id <user>@<vm-ip>
+ssh-copy-id emre@192.168.56.101
 ```
 
-Test key-based login, then run:
+Confirm key login works, then run:
 
 ```bash
 sudo ./scripts/harden_server.sh
@@ -22,22 +22,22 @@ sudo ./scripts/harden_server.sh --apply
 ```
 
 ## Firewalld
-Only `ssh` is allowed on the `public` zone. PostgreSQL (`9999/tcp`) stays bound to localhost.
+`firewalld` stays active with `public` as the default zone and only `ssh` allowed. PostgreSQL listens on `localhost:9999` and is not exposed on external interfaces.
 
 ## SELinux
-The host runs in `Enforcing` mode (`getenforce`). Since PostgreSQL runs on custom port `9999`, allow it in SELinux policy:
+Keep SELinux in `Enforcing` mode (`getenforce`). Because PostgreSQL uses non-default port `9999`, `setup_postgres.sh` registers it under `postgresql_port_t`:
 
 ```bash
 sudo semanage port -a -t postgresql_port_t -p tcp 9999
 ```
 
-If a service or backup path gets blocked:
+When troubleshooting a permission block, check AVC denials first:
 
 ```bash
 sudo ausearch -m avc -ts recent
 ```
 
-Fix the underlying file context (`semanage fcontext`, `restorecon`) or boolean (`setsebool -P`). Only drop to `setenforce 0` briefly to confirm SELinux is the cause, then switch back to `setenforce 1`.
+Fix the file context (`semanage fcontext` + `restorecon`) or boolean (`setsebool -P`). Only switch to `setenforce 0` temporarily if needed to isolate the issue, then return to `setenforce 1`.
 
-## Air-gapped Test
-After PostgreSQL and required packages are installed, disable the NAT adapter and verify external traffic fails while local SSH, PostgreSQL, backups and health checks keep working.
+## Air-gapped Check
+Once packages are installed, disable Adapter 1 (NAT) in VirtualBox and verify external routing fails while local SSH, PostgreSQL, backups and health checks continue working.
