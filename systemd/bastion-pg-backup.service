@@ -1,0 +1,12 @@
+[Unit]
+Description=Bastion PostgreSQL daily backup
+After=postgresql.service
+Requires=postgresql.service
+
+[Service]
+Type=oneshot
+User=postgres
+Group=postgres
+Environment=PG_PORT=9999
+Environment=PG_DB=bastion_ops
+ExecStart=/usr/local/bin/pg_backup.sh
