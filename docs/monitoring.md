@@ -1,10 +1,10 @@
 # System Monitoring and Failure Scenarios
 
-`scripts/health_check.sh` checks host resources, PostgreSQL readiness (port `9999`), latest backup freshness, SELinux mode, and recent journal errors.
+`scripts/health_check.sh` checks host resources, PostgreSQL readiness and active connections (port `9999`), latest backup freshness, SELinux mode, and recent journal errors.
 
 ## Usage
 ```bash
-./scripts/health_check.sh
+sudo ./scripts/health_check.sh
 echo "exit code: $?"
 ```
 

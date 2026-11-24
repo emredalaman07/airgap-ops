@@ -13,6 +13,7 @@ MEM_WARN="${MEM_WARN:-80}"
 MEM_CRIT="${MEM_CRIT:-90}"
 DISK_WARN="${DISK_WARN:-80}"
 DISK_CRIT="${DISK_CRIT:-90}"
+PG_CONN_WARN="${PG_CONN_WARN:-50}"
 
 STATUS=0
 
@@ -83,6 +84,27 @@ check_postgres() {
     else
         report CRIT "PostgreSQL service is running but not ready on ${PG_HOST}:${PG_PORT}"
         set_status 2
+        return
+    fi
+
+    # Query active connection count via local socket (requires postgres or root/sudo)
+    local conns=""
+    if [[ "${USER:-}" == "postgres" ]]; then
+        conns="$(psql -p "${PG_PORT}" -d postgres -tAc "SELECT count(*) FROM pg_stat_activity;" 2>/dev/null || true)"
+    elif [[ "${EUID}" -eq 0 ]]; then
+        conns="$(sudo -u postgres psql -p "${PG_PORT}" -d postgres -tAc "SELECT count(*) FROM pg_stat_activity;" 2>/dev/null || true)"
+    fi
+
+    if [[ -n "${conns}" ]]; then
+        if (( conns >= PG_CONN_WARN )); then
+            report WARN "PostgreSQL active connections: ${conns} (warn >= ${PG_CONN_WARN})"
+            set_status 1
+        else
+            report OK "PostgreSQL active connections: ${conns}"
+        fi
+    else
+        report WARN "PostgreSQL active connections: skipped (run as root or postgres to query pg_stat_activity)"
+        set_status 1
     fi
 }
 
