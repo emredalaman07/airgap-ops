@@ -1,5 +1,5 @@
 [Unit]
-Description=AirgapOps PostgreSQL daily backup
+Description=AirgapOps daily backup
 After=postgresql.service
 Requires=postgresql.service
 

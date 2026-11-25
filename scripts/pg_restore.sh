@@ -18,7 +18,7 @@ cd /
 PG_HOST="${PG_HOST:-}"
 PG_PORT="${PG_PORT:-9999}"
 PG_USER="${PG_USER:-postgres}"
-LOG_FILE="${LOG_FILE:-/var/log/airgap-db/restore.log}"
+LOG_FILE="${LOG_FILE:-/var/log/airgap-ops/restore.log}"
 
 mkdir -p "$(dirname "${LOG_FILE}")"
 

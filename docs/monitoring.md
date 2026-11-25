@@ -3,7 +3,7 @@
 `scripts/health_check.sh` checks CPU load, memory, `/` disk usage, PostgreSQL service/port readiness (`9999`), active connections (`pg_stat_activity`), last backup age, SELinux mode, and recent `journalctl` errors.
 
 ## Usage
-Run with `sudo` so the script can read `/var/backups/airgap-db` (`0750`) and query `pg_stat_activity`:
+Run with `sudo` so the script can read `/var/backups/airgap-ops` (`0750`) and query `pg_stat_activity`:
 
 ```bash
 sudo ./scripts/health_check.sh

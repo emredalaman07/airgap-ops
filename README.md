@@ -1,6 +1,6 @@
-# AirgapOps (`airgap-db-ops`)
+# AirgapOps — Linux Hardening & Backup Suite
 
-Offline database infrastructure project for running a hardened, air-gapped PostgreSQL instance on Rocky Linux 9 (RHEL 9 compatible). Everything runs from the terminal using Bash scripts and `systemd` units: host hardening, PostgreSQL setup on port `9999`, automated backups with checksums, restore verification, and health checks.
+Linux server hardening and automated backup suite for running an air-gapped PostgreSQL instance on Rocky Linux 9 (RHEL 9 compatible). Everything runs from the terminal using Bash scripts and `systemd` units: SSH/firewall/SELinux hardening, PostgreSQL setup on port `9999`, scheduled backups with SHA-256 checksums, restore verification, and health checks.
 
 ## Architecture
 
@@ -8,10 +8,10 @@ Offline database infrastructure project for running a hardened, air-gapped Postg
 flowchart LR
     Admin["Admin Host (SSH Key)"] -->|SSH / Host-Only| VM
 
-    subgraph VM["airgap-db-01: Rocky Linux 9 (Firewalld + SELinux Enforcing)"]
+    subgraph VM["airgap-01: Rocky Linux 9 (Firewalld + SELinux Enforcing)"]
         PG["PostgreSQL (localhost:9999)"]
         Timer["systemd timer (02:00)"] --> Backup["pg_backup.sh"]
-        Backup -->|pg_dump -Fc + sha256| Store["/var/backups/airgap-db"]
+        Backup -->|pg_dump -Fc + sha256| Store["/var/backups/airgap-ops"]
         Store --> Restore["pg_restore.sh"]
         Restore --> TestDB["airgap_ops_restore_test"]
         Health["health_check.sh"] --> PG
@@ -22,7 +22,7 @@ flowchart LR
 ## Layout
 
 ```text
-airgap-db-ops/
+airgap-ops/
 ├── configs/
 │   └── 99-airgap-hardening.conf     # sshd drop-in (key-only, no root login)
 ├── docs/
@@ -41,8 +41,8 @@ airgap-db-ops/
 │   ├── init.sql                     # ops schema and tables
 │   └── seed.sql                     # sample rows for testing
 └── systemd/
-    ├── airgap-db-backup.service
-    └── airgap-db-backup.timer
+    ├── airgap-backup.service
+    └── airgap-backup.timer
 ```
 
 ## Setup on Rocky Linux 9 / RHEL 9
@@ -75,20 +75,20 @@ sudo -u postgres psql -p 9999 -d airgap_ops -v ON_ERROR_STOP=1 < sql/seed.sql
 ### 4. Configure backups and test restore
 ```bash
 sudo install -m 755 scripts/pg_backup.sh scripts/pg_restore.sh /usr/local/bin/
-sudo mkdir -p /var/backups/airgap-db /var/log/airgap-db
-sudo chown -R postgres:postgres /var/backups/airgap-db /var/log/airgap-db
-sudo chmod 750 /var/backups/airgap-db /var/log/airgap-db
+sudo mkdir -p /var/backups/airgap-ops /var/log/airgap-ops
+sudo chown -R postgres:postgres /var/backups/airgap-ops /var/log/airgap-ops
+sudo chmod 750 /var/backups/airgap-ops /var/log/airgap-ops
 
 sudo -u postgres /usr/local/bin/pg_backup.sh
-LATEST="$(sudo find /var/backups/airgap-db -maxdepth 1 -name 'airgap_ops_*.dump' | sort | tail -n 1)"
+LATEST="$(sudo find /var/backups/airgap-ops -maxdepth 1 -name 'airgap_ops_*.dump' | sort | tail -n 1)"
 sudo -u postgres /usr/local/bin/pg_restore.sh "${LATEST}"
 ```
 
 To enable daily scheduled backups at 02:00:
 ```bash
-sudo cp systemd/airgap-db-backup.service systemd/airgap-db-backup.timer /etc/systemd/system/
+sudo cp systemd/airgap-backup.service systemd/airgap-backup.timer /etc/systemd/system/
 sudo systemctl daemon-reload
-sudo systemctl enable --now airgap-db-backup.timer
+sudo systemctl enable --now airgap-backup.timer
 ```
 
 ### 5. Run health check
