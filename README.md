@@ -1,6 +1,6 @@
-# bastion-pg-ops
+# AirgapOps (`airgap-db-ops`)
 
-Homelab project for running a hardened, air-gapped PostgreSQL instance on Rocky Linux 9 (RHEL 9 compatible). Everything runs from the terminal using Bash scripts and `systemd` units: host hardening, PostgreSQL setup on port `9999`, automated backups with checksums, restore verification, and health checks.
+Offline database infrastructure project for running a hardened, air-gapped PostgreSQL instance on Rocky Linux 9 (RHEL 9 compatible). Everything runs from the terminal using Bash scripts and `systemd` units: host hardening, PostgreSQL setup on port `9999`, automated backups with checksums, restore verification, and health checks.
 
 ## Architecture
 
@@ -8,12 +8,12 @@ Homelab project for running a hardened, air-gapped PostgreSQL instance on Rocky 
 flowchart LR
     Admin["Admin Host (SSH Key)"] -->|SSH / Host-Only| VM
 
-    subgraph VM["bastion-db-01: Rocky Linux 9 (Firewalld + SELinux Enforcing)"]
+    subgraph VM["airgap-db-01: Rocky Linux 9 (Firewalld + SELinux Enforcing)"]
         PG["PostgreSQL (localhost:9999)"]
         Timer["systemd timer (02:00)"] --> Backup["pg_backup.sh"]
-        Backup -->|pg_dump -Fc + sha256| Store["/var/backups/bastion-pg"]
+        Backup -->|pg_dump -Fc + sha256| Store["/var/backups/airgap-db"]
         Store --> Restore["pg_restore.sh"]
-        Restore --> TestDB["bastion_ops_restore_test"]
+        Restore --> TestDB["airgap_ops_restore_test"]
         Health["health_check.sh"] --> PG
         Health --> Store
     end
@@ -22,9 +22,9 @@ flowchart LR
 ## Layout
 
 ```text
-bastion-pg-ops/
+airgap-db-ops/
 ├── configs/
-│   └── 99-bastion-hardening.conf    # sshd drop-in (key-only, no root login)
+│   └── 99-airgap-hardening.conf     # sshd drop-in (key-only, no root login)
 ├── docs/
 │   ├── hardening.md                 # network, sshd, firewalld, SELinux, air-gapped setup
 │   ├── postgresql.md                # PostgreSQL setup on port 9999
@@ -41,8 +41,8 @@ bastion-pg-ops/
 │   ├── init.sql                     # ops schema and tables
 │   └── seed.sql                     # sample rows for testing
 └── systemd/
-    ├── bastion-pg-backup.service
-    └── bastion-pg-backup.timer
+    ├── airgap-db-backup.service
+    └── airgap-db-backup.timer
 ```
 
 ## Setup on Rocky Linux 9 / RHEL 9
@@ -67,28 +67,28 @@ pg_isready -h localhost -p 9999
 ### 3. Initialize database and schema
 ```bash
 sudo -u postgres psql -p 9999 -c "CREATE ROLE ops_user WITH LOGIN PASSWORD 'change_me';"
-sudo -u postgres psql -p 9999 -c "CREATE DATABASE bastion_ops OWNER ops_user;"
-sudo -u postgres psql -p 9999 -d bastion_ops -v ON_ERROR_STOP=1 < sql/init.sql
-sudo -u postgres psql -p 9999 -d bastion_ops -v ON_ERROR_STOP=1 < sql/seed.sql
+sudo -u postgres psql -p 9999 -c "CREATE DATABASE airgap_ops OWNER ops_user;"
+sudo -u postgres psql -p 9999 -d airgap_ops -v ON_ERROR_STOP=1 < sql/init.sql
+sudo -u postgres psql -p 9999 -d airgap_ops -v ON_ERROR_STOP=1 < sql/seed.sql
 ```
 
 ### 4. Configure backups and test restore
 ```bash
 sudo install -m 755 scripts/pg_backup.sh scripts/pg_restore.sh /usr/local/bin/
-sudo mkdir -p /var/backups/bastion-pg /var/log/bastion-pg
-sudo chown -R postgres:postgres /var/backups/bastion-pg /var/log/bastion-pg
-sudo chmod 750 /var/backups/bastion-pg /var/log/bastion-pg
+sudo mkdir -p /var/backups/airgap-db /var/log/airgap-db
+sudo chown -R postgres:postgres /var/backups/airgap-db /var/log/airgap-db
+sudo chmod 750 /var/backups/airgap-db /var/log/airgap-db
 
 sudo -u postgres /usr/local/bin/pg_backup.sh
-LATEST="$(sudo find /var/backups/bastion-pg -maxdepth 1 -name 'bastion_ops_*.dump' | sort | tail -n 1)"
+LATEST="$(sudo find /var/backups/airgap-db -maxdepth 1 -name 'airgap_ops_*.dump' | sort | tail -n 1)"
 sudo -u postgres /usr/local/bin/pg_restore.sh "${LATEST}"
 ```
 
 To enable daily scheduled backups at 02:00:
 ```bash
-sudo cp systemd/bastion-pg-backup.service systemd/bastion-pg-backup.timer /etc/systemd/system/
+sudo cp systemd/airgap-db-backup.service systemd/airgap-db-backup.timer /etc/systemd/system/
 sudo systemctl daemon-reload
-sudo systemctl enable --now bastion-pg-backup.timer
+sudo systemctl enable --now airgap-db-backup.timer
 ```
 
 ### 5. Run health check
@@ -98,7 +98,7 @@ sudo ./scripts/health_check.sh
 Exit codes: `0` (OK), `1` (WARN), `2` (CRIT).
 
 ## Security & Air-gapped Operation
-- Password authentication and root SSH login are disabled (`/etc/ssh/sshd_config.d/99-bastion-hardening.conf`).
+- Password authentication and root SSH login are disabled (`/etc/ssh/sshd_config.d/99-airgap-hardening.conf`).
 - `firewalld` exposes only `ssh` on the `public` zone; PostgreSQL listens strictly on `localhost:9999`.
 - SELinux remains in `Enforcing` mode (`getenforce`).
 - After installing `postgresql-server` and `policycoreutils-python-utils`, disable the VM's NAT adapter to run offline over the Host-Only network (`192.168.56.0/24`).

@@ -1,9 +1,9 @@
 -- Sample data for testing queries, backups and restore drills
--- Usage: sudo -u postgres psql -p 9999 -d bastion_ops < sql/seed.sql
+-- Usage: sudo -u postgres psql -p 9999 -d airgap_ops < sql/seed.sql
 
 INSERT INTO ops.assets (hostname, ip_address, environment, status)
 VALUES
-    ('bastion-db-01', '192.168.56.101', 'homelab', 'active'),
+    ('airgap-db-01',  '192.168.56.101', 'homelab', 'active'),
     ('sensor-gw-01',  '192.168.56.102', 'homelab', 'active'),
     ('telemetry-01',  '192.168.56.103', 'homelab', 'maintenance')
 ON CONFLICT (hostname) DO NOTHING;
@@ -11,7 +11,7 @@ ON CONFLICT (hostname) DO NOTHING;
 INSERT INTO ops.maintenance_logs (asset_id, action, performed_by, notes)
 SELECT id, 'initial_hardening', 'emre', 'ssh key-only, firewalld active, selinux enforcing'
 FROM ops.assets
-WHERE hostname = 'bastion-db-01'
+WHERE hostname = 'airgap-db-01'
   AND NOT EXISTS (
       SELECT 1 FROM ops.maintenance_logs m
       WHERE m.asset_id = ops.assets.id AND m.action = 'initial_hardening'

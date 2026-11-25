@@ -1,5 +1,5 @@
--- Schema for bastion_ops
--- Usage: sudo -u postgres psql -p 9999 -d bastion_ops < sql/init.sql
+-- Schema for airgap_ops
+-- Usage: sudo -u postgres psql -p 9999 -d airgap_ops < sql/init.sql
 
 CREATE SCHEMA IF NOT EXISTS ops;
 

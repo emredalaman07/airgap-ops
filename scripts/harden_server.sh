@@ -10,8 +10,8 @@ if [[ "${1:-}" == "--apply" ]]; then
 fi
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SSH_CONF_SRC="${REPO_DIR}/configs/99-bastion-hardening.conf"
-SSH_CONF_DST="/etc/ssh/sshd_config.d/99-bastion-hardening.conf"
+SSH_CONF_SRC="${REPO_DIR}/configs/99-airgap-hardening.conf"
+SSH_CONF_DST="/etc/ssh/sshd_config.d/99-airgap-hardening.conf"
 
 if [[ "${EUID}" -ne 0 ]]; then
     echo "error: run with sudo/root" >&2

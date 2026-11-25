@@ -10,9 +10,9 @@ cd /
 PG_HOST="${PG_HOST:-}"
 PG_PORT="${PG_PORT:-9999}"
 PG_USER="${PG_USER:-postgres}"
-PG_DB="${PG_DB:-bastion_ops}"
-BACKUP_DIR="${BACKUP_DIR:-/var/backups/bastion-pg}"
-LOG_FILE="${LOG_FILE:-/var/log/bastion-pg/backup.log}"
+PG_DB="${PG_DB:-airgap_ops}"
+BACKUP_DIR="${BACKUP_DIR:-/var/backups/airgap-db}"
+LOG_FILE="${LOG_FILE:-/var/log/airgap-db/backup.log}"
 RETENTION_DAYS="${RETENTION_DAYS:-7}"
 
 TIMESTAMP="$(date '+%Y-%m-%d_%H-%M-%S')"

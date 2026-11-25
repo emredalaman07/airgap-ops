@@ -1,5 +1,5 @@
 [Unit]
-Description=Bastion PostgreSQL daily backup
+Description=AirgapOps PostgreSQL daily backup
 After=postgresql.service
 Requires=postgresql.service
 
@@ -8,5 +8,5 @@ Type=oneshot
 User=postgres
 Group=postgres
 Environment=PG_PORT=9999
-Environment=PG_DB=bastion_ops
+Environment=PG_DB=airgap_ops
 ExecStart=/usr/local/bin/pg_backup.sh

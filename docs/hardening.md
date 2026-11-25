@@ -1,6 +1,6 @@
 # Server Hardening
 
-Baseline setup used on the Rocky Linux 9 VM (`bastion-db-01`).
+Baseline setup used on the Rocky Linux 9 VM (`airgap-db-01`).
 
 ## VM Network
 - Adapter 1 (NAT): used during initial `dnf` package installation, disabled afterwards to test air-gapped operation.
