@@ -1,35 +1,35 @@
 # Backup and Retention
 
-`pg_backup.sh` creates compressed custom-format dumps (`pg_dump -Fc`) from port `9999`, writes a `.sha256` file next to each dump, logs results to `/var/log/airgap-db/backup.log`, and deletes backups older than `RETENTION_DAYS` (default `7`).
+`pg_backup.sh` creates compressed custom-format dumps (`pg_dump -Fc`) from port `9999`, writes a `.sha256` file next to each dump, logs results to `/var/log/airgap-ops/backup.log`, and deletes backups older than `RETENTION_DAYS` (default `7`).
 
 ## Setup Directories and Script
 Install the backup and restore scripts into `/usr/local/bin` so the `postgres` user and `systemd` can execute them cleanly regardless of home directory permissions:
 
 ```bash
 sudo install -m 755 scripts/pg_backup.sh scripts/pg_restore.sh /usr/local/bin/
-sudo mkdir -p /var/backups/airgap-db /var/log/airgap-db
-sudo chown -R postgres:postgres /var/backups/airgap-db /var/log/airgap-db
-sudo chmod 750 /var/backups/airgap-db /var/log/airgap-db
+sudo mkdir -p /var/backups/airgap-ops /var/log/airgap-ops
+sudo chown -R postgres:postgres /var/backups/airgap-ops /var/log/airgap-ops
+sudo chmod 750 /var/backups/airgap-ops /var/log/airgap-ops
 ```
 
 ## Run Manually
 ```bash
 sudo -u postgres /usr/local/bin/pg_backup.sh
-sudo ls -lh /var/backups/airgap-db
-sudo tail -n 10 /var/log/airgap-db/backup.log
+sudo ls -lh /var/backups/airgap-ops
+sudo tail -n 10 /var/log/airgap-ops/backup.log
 ```
 
 Verify checksum manually:
 ```bash
-sudo bash -c 'cd /var/backups/airgap-db && sha256sum -c *.sha256'
+sudo bash -c 'cd /var/backups/airgap-ops && sha256sum -c *.sha256'
 ```
 
 ## Enable Daily systemd Timer
 ```bash
-sudo cp systemd/airgap-db-backup.service systemd/airgap-db-backup.timer /etc/systemd/system/
+sudo cp systemd/airgap-backup.service systemd/airgap-backup.timer /etc/systemd/system/
 sudo systemctl daemon-reload
-sudo systemctl enable --now airgap-db-backup.timer
-systemctl list-timers airgap-db-backup.timer
+sudo systemctl enable --now airgap-backup.timer
+systemctl list-timers airgap-backup.timer
 ```
 
 ## Retention Override

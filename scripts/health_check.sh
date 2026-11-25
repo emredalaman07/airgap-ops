@@ -6,7 +6,7 @@ set -euo pipefail
 
 PG_HOST="${PG_HOST:-localhost}"
 PG_PORT="${PG_PORT:-9999}"
-BACKUP_DIR="${BACKUP_DIR:-/var/backups/airgap-db}"
+BACKUP_DIR="${BACKUP_DIR:-/var/backups/airgap-ops}"
 BACKUP_MAX_AGE_HOURS="${BACKUP_MAX_AGE_HOURS:-26}"
 
 MEM_WARN="${MEM_WARN:-80}"

@@ -6,7 +6,7 @@
 If no target database name is given, `pg_restore.sh` restores into `airgap_ops_restore_test` so `airgap_ops` is left untouched:
 
 ```bash
-LATEST="$(sudo find /var/backups/airgap-db -maxdepth 1 -name 'airgap_ops_*.dump' | sort | tail -n 1)"
+LATEST="$(sudo find /var/backups/airgap-ops -maxdepth 1 -name 'airgap_ops_*.dump' | sort | tail -n 1)"
 sudo -u postgres /usr/local/bin/pg_restore.sh "${LATEST}"
 ```
 
