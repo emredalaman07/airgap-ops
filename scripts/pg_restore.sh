@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Verify sha256 (if present) and restore a custom-format dump into a target DB.
-# Defaults to bastion_ops_restore_test so the main DB is not overwritten by mistake.
+# Defaults to airgap_ops_restore_test so the main DB is not overwritten by mistake.
 
 set -euo pipefail
 
@@ -11,14 +11,14 @@ fi
 
 # Resolve dump path before switching working directory
 DUMP_FILE="$(realpath "$1")"
-TARGET_DB="${2:-bastion_ops_restore_test}"
+TARGET_DB="${2:-airgap_ops_restore_test}"
 
 cd /
 
 PG_HOST="${PG_HOST:-}"
 PG_PORT="${PG_PORT:-9999}"
 PG_USER="${PG_USER:-postgres}"
-LOG_FILE="${LOG_FILE:-/var/log/bastion-pg/restore.log}"
+LOG_FILE="${LOG_FILE:-/var/log/airgap-db/restore.log}"
 
 mkdir -p "$(dirname "${LOG_FILE}")"
 

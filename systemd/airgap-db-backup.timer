@@ -1,5 +1,5 @@
 [Unit]
-Description=Run Bastion PostgreSQL backup daily at 02:00
+Description=Run AirgapOps PostgreSQL backup daily at 02:00
 
 [Timer]
 OnCalendar=*-*-* 02:00:00

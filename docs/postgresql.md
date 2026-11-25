@@ -19,15 +19,15 @@ Note: redirect SQL files via `<` so the shell opens them before switching to `po
 
 ```bash
 sudo -u postgres psql -p 9999 -c "CREATE ROLE ops_user WITH LOGIN PASSWORD 'change_me';"
-sudo -u postgres psql -p 9999 -c "CREATE DATABASE bastion_ops OWNER ops_user;"
-sudo -u postgres psql -p 9999 -d bastion_ops -v ON_ERROR_STOP=1 < sql/init.sql
-sudo -u postgres psql -p 9999 -d bastion_ops -v ON_ERROR_STOP=1 < sql/seed.sql
+sudo -u postgres psql -p 9999 -c "CREATE DATABASE airgap_ops OWNER ops_user;"
+sudo -u postgres psql -p 9999 -d airgap_ops -v ON_ERROR_STOP=1 < sql/init.sql
+sudo -u postgres psql -p 9999 -d airgap_ops -v ON_ERROR_STOP=1 < sql/seed.sql
 ```
 
 Test query (both via peer socket and `ops_user` over TCP):
 ```bash
-sudo -u postgres psql -p 9999 -d bastion_ops -c "SELECT hostname, ip_address, status FROM ops.assets;"
-psql -h localhost -p 9999 -U ops_user -d bastion_ops -c "SELECT count(*) FROM ops.audit_events;"
+sudo -u postgres psql -p 9999 -d airgap_ops -c "SELECT hostname, ip_address, status FROM ops.assets;"
+psql -h localhost -p 9999 -U ops_user -d airgap_ops -c "SELECT count(*) FROM ops.audit_events;"
 ```
 
 ## Air-gapped Check
